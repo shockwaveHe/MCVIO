@@ -20,7 +20,7 @@ not increasing the CPU usage rate.
 
 **Related Papers**
 
-* **Toward Robust Visual-Inertial Odometry with Multiple Nonoverlapping Monocular Cameras**, Yao He, Huai Yu, Wen Yang, and Sebastian Scherer, IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS, 2022), [pdf]()
+* **Toward Robust Visual-Inertial Odometry with Multiple Nonoverlapping Monocular Cameras**, Yao He, Huai Yu, Wen Yang, and Sebastian Scherer, IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS, 2022), [pdf](https://github.com/shockwaveHe/MCVIO/blob/main/MCVIO/config/0707.pdf)
 
 * Our work is based on: **VINS-Mono: A Robust and Versatile Monocular Visual-Inertial State Estimator**, Tong Qin, Peiliang Li, Zhenfei Yang, Shaojie Shen, IEEE Transactions on Robotics [pdf](https://ieeexplore.ieee.org/document/8421746/?arnumber=8421746&source=authoralert) 
 
