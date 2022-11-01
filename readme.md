@@ -75,7 +75,7 @@ Our MCVIO was tested on the [EuRoC MAV Dataset](http://projects.asl.ethz.ch/data
 
 4.2 Our own collected datasets
 
-Will release soon.
+Due to storage issue, we currently can only provide one bag file [indoor_1.bag](https://drive.google.com/file/d/1tgq2AQ8pjkjaF8iNTKtnjAbXENSp33v3/view?usp=share_link). More datasets will be released later.
 
 ## 5. Citations
 

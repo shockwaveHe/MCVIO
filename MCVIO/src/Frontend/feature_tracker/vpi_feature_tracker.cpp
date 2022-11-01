@@ -26,12 +26,15 @@ void VPIFeatureTracker::reduceVectorVPI(VPIArray v, VPIArray arrStatus)
     vpiArrayLock(v, VPI_LOCK_READ_WRITE, &arrData);
     arrPoints = (VPIKeypoint *)arrData.data;
     const uint8_t *status = (uint8_t *)statusdata.data;
+    int totKeypoints = *arrData.sizePointer;
 #else
-    vpiArrayLockData(correspondingVPIarr, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &arrData);
+    vpiArrayLockData(arrStatus, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &statusdata);
+    vpiArrayLockData(v, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &arrData);
     arrPoints = (VPIKeypoint *)arrData.buffer.aos.data;
     const uint8_t *status = (uint8_t *)statusdata.buffer.aos.data;
+    int totKeypoints = *arrData.buffer.aos.sizePointer;
 #endif
-    int totKeypoints = *arrData.sizePointer;
+
     for (int i = 0; i < totKeypoints; i++)
     {
         if (1 - status[i])
@@ -109,7 +112,11 @@ void VPIFeatureTracker::reduceVector1(vector<cv::Point2f> &v, vector<uchar> stat
     v.resize(j);
     if (flag)
     {
+#if NV_VPI_VERSION_MAJOR == 1
         *arrData.sizePointer = j;
+#else
+        *arrData.buffer.aos.sizePointer = j;
+#endif
         vpiArrayUnlock(correspondingVPIarr);
     }
     // std::cerr<<"arr Size:"<<j<<std::endl;
@@ -219,7 +226,7 @@ void VPIstatus_to_cvStatus(VPIArray &src, vector<uchar> &dst)
 #else
     vpiArrayLockData(src, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &srcdata);
     const uint8_t *srcStatus = (uint8_t *)srcdata.buffer.aos.data;
-    int size = *srcStatus.buffer.aos.sizePointer;
+    int size = *srcdata.buffer.aos.sizePointer;
 #endif
 
     dst.resize(size);

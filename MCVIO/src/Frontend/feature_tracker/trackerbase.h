@@ -20,6 +20,9 @@
 #include "../../utility/Twist.h"
 
 #include "../sensors.h"
+
+#include <gflags/gflags.h>
+#include <glog/logging.h>
 namespace MCVIO
 {
     class TrackerBase
