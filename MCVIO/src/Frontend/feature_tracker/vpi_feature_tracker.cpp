@@ -129,7 +129,7 @@ void outputVPIKeypoints(VPIArray src)
     const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.data;
     int totKeypoints = *srcdata.sizePointer;
 #else
-    vpiArrayLockData(src, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &srcData);
+    vpiArrayLockData(src, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &srcdata);
     const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.buffer.aos.data;
     int totKeypoints = *srcdata.buffer.aos.sizePointer;
 #endif
@@ -175,7 +175,7 @@ void VPIFeatureTracker::reduceVectorVPI2(vector<cv::Point2f> &v, VPIArray status
 #else
     vpiArrayLockData(status, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &statusdata);
     const uint8_t *status_data = (uint8_t *)statusdata.buffer.aos.data;
-    int tot = *statusdata.bufffer.aos.sizePointer;
+    int tot = *statusdata.buffer.aos.sizePointer;
 #endif
     for (int i = 0; i < tot; i++)
         if (1 - status_data[i])
@@ -474,8 +474,8 @@ void SortKeypoints(VPIArray keypoints, VPIArray scores, std::size_t max)
     vpiArrayLock(scores, VPI_LOCK_READ_WRITE, &scoresData);
     std::vector<int> indices(*ptsData.sizePointer);
 #else
-    vpiArrayLockDaya(keypoints, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &ptsData);
-    vpiArrayLockDaya(scores, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &scoresData);
+    vpiArrayLockData(keypoints, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &ptsData);
+    vpiArrayLockData(scores, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &scoresData);
     std::vector<int> indices(*ptsData.buffer.aos.sizePointer);
 #endif
     std::iota(indices.begin(), indices.end(), 0);
@@ -656,13 +656,17 @@ void VPIFeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
         // vector<uchar> status;
 
         vpiArrayCreate(MAX_HARRIS_CORNERS, VPI_ARRAY_TYPE_U8, 0, &arrStatus);
-        // CHECK_STATUS(vpiArrayCreate(MAX_HARRIS_CORNERS, VPI_ARRAY_TYPE_KEYPOINT, 0, &arrForwPts));
-        // vector<float> err;
-        //  std::cerr<<"cur_pts size"<<cur_pts.size()<<std::endl;
-        //  Optical FLow Pyr LK replaced by VPI
-        // cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err, cv::Size(21, 21), 3);
-        // std::cerr<<"wrap img"<<std::endl;
+// CHECK_STATUS(vpiArrayCreate(MAX_HARRIS_CORNERS, VPI_ARRAY_TYPE_KEYPOINT, 0, &arrForwPts));
+// vector<float> err;
+//  std::cerr<<"cur_pts size"<<cur_pts.size()<<std::endl;
+//  Optical FLow Pyr LK replaced by VPI
+// cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err, cv::Size(21, 21), 3);
+// std::cerr<<"wrap img"<<std::endl;
+#if NV_VPI_VERSION_MAJOR == 1
         vpiSubmitGaussianPyramidGenerator(stream, backend, VPI_forw_img, pyrForwFrame);
+#else
+        vpiSubmitGaussianPyramidGenerator(stream, backend, VPI_forw_img, pyrForwFrame, VPI_BORDER_ZERO);
+#endif
         // std::cerr<<"submit LK"<<std::endl;
         // outputVPIKeypoints(arrCurPts);
         // std::cerr<<"submit LK"<<std::endl;
@@ -981,7 +985,7 @@ void VPIFeatureTracker::undistortedPoints()
     cur_data_pts = (VPIKeypoint *)cur_data.data;
     int totKeypoints = *cur_data.sizePointer;
 #else
-    vpiArrayLock(arrCurPts, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &cur_data);
+    vpiArrayLockData(arrCurPts, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &cur_data);
     cur_data_pts = (VPIKeypoint *)cur_data.buffer.aos.data;
     int totKeypoints = *cur_data.buffer.aos.sizePointer;
 #endif
@@ -1056,10 +1060,16 @@ void VPIFeatureTracker::initVPIData(const sensor_msgs::ImageConstPtr &img_msg)
         ptr = cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::MONO8);
     cv::Mat init_img = ptr->image.rowRange(0, cam->ROW);
     vpiStreamCreate(0, &stream);
-    // CV mat wrapper
+// CV mat wrapper
+#if NV_VPI_VERSION_MAJOR == 1
     vpiImageCreateOpenCVMatWrapper(init_img, 0, &VPI_prev_img);
     vpiImageCreateOpenCVMatWrapper(init_img, 0, &VPI_cur_img);
     vpiImageCreateOpenCVMatWrapper(init_img, 0, &VPI_forw_img);
+#else
+    vpiImageCreateWrapperOpenCVMat(init_img, 0, &VPI_prev_img);
+    vpiImageCreateWrapperOpenCVMat(init_img, 0, &VPI_cur_img);
+    vpiImageCreateWrapperOpenCVMat(init_img, 0, &VPI_forw_img);
+#endif
     // get format
     vpiImageGetFormat(VPI_prev_img, &imgFormat);
     // create pyramid
@@ -1094,14 +1104,18 @@ void VPIFeatureTracker::initVPIData(const sensor_msgs::ImageConstPtr &img_msg)
     harrisParams.minNMSDistance = 20;
     harrisParams.strengthThresh = 0.01;
 
-    // harrisParams.gradientSize   = 5;
-    // harrisParams.blockSize      = 5;
-    // harrisParams.blockSize = 7;
-    // harrisParams.sensitivity    = 0.01;
-    // harrisParams.minNMSDistance = 12;
-    // CHECK_STATUS(vpiSubmitHarrisCornerDetector(stream, backend, harris, VPI_cur_img, arrCurPts, scores, &harrisParams));
-    // CHECK_STATUS(vpiStreamSync(stream));
+// harrisParams.gradientSize   = 5;
+// harrisParams.blockSize      = 5;
+// harrisParams.blockSize = 7;
+// harrisParams.sensitivity    = 0.01;
+// harrisParams.minNMSDistance = 12;
+// CHECK_STATUS(vpiSubmitHarrisCornerDetector(stream, backend, harris, VPI_cur_img, arrCurPts, scores, &harrisParams));
+// CHECK_STATUS(vpiStreamSync(stream));
+#if NV_VPI_VERSION_MAJOR == 1
     vpiSubmitGaussianPyramidGenerator(stream, backend, VPI_cur_img, pyrCurFrame);
+#else
+    vpiSubmitGaussianPyramidGenerator(stream, backend, VPI_cur_img, pyrCurFrame, VPI_BORDER_ZERO)
+#endif
 }
 
 void VPIFeatureTracker::getPt(int idx, int &id, geometry_msgs::Point32 &p, cv::Point2f &p_uv, cv::Point2f &v)
