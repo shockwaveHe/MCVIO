@@ -32,6 +32,7 @@
 #include <vpi/algo/GaussianPyramid.h>
 #include <vpi/algo/HarrisCorners.h>
 #include <vpi/algo/OpticalFlowPyrLK.h>
+#include <vpi/Version.h>
 
 #include <eigen3/Eigen/Dense>
 

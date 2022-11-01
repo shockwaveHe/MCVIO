@@ -21,10 +21,16 @@ void VPIFeatureTracker::reduceVectorVPI(VPIArray v, VPIArray arrStatus)
     int j = 0;
     VPIArrayData arrData, statusdata;
     VPIKeypoint *arrPoints;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(arrStatus, VPI_LOCK_READ_WRITE, &statusdata);
     vpiArrayLock(v, VPI_LOCK_READ_WRITE, &arrData);
     arrPoints = (VPIKeypoint *)arrData.data;
     const uint8_t *status = (uint8_t *)statusdata.data;
+#else
+    vpiArrayLockData(correspondingVPIarr, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &arrData);
+    arrPoints = (VPIKeypoint *)arrData.buffer.aos.data;
+    const uint8_t *status = (uint8_t *)statusdata.buffer.aos.data;
+#endif
     int totKeypoints = *arrData.sizePointer;
     for (int i = 0; i < totKeypoints; i++)
     {
@@ -35,7 +41,11 @@ void VPIFeatureTracker::reduceVectorVPI(VPIArray v, VPIArray arrStatus)
             j += 1;
         }
     }
+#if NV_VPI_VERSION_MAJOR == 1
     *arrData.sizePointer = j;
+#else
+    *arrData.buffer.aos.sizePointer = j;
+#endif
     vpiArrayUnlock(v);
 }
 void VPIFeatureTracker::reduceVectorVPI(VPIArray v, vector<uchar> &arrStatus)
@@ -43,8 +53,13 @@ void VPIFeatureTracker::reduceVectorVPI(VPIArray v, vector<uchar> &arrStatus)
     int j = 0;
     VPIArrayData arrData;
     VPIKeypoint *arrPoints;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(v, VPI_LOCK_READ_WRITE, &arrData);
     arrPoints = (VPIKeypoint *)arrData.data;
+#else
+    vpiArrayLockData(v, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &arrData);
+    arrPoints = (VPIKeypoint *)arrData.buffer.aos.data;
+#endif
     for (int i = 0; i < int(arrStatus.size()); i++)
     {
         if (arrStatus[i])
@@ -54,7 +69,11 @@ void VPIFeatureTracker::reduceVectorVPI(VPIArray v, vector<uchar> &arrStatus)
             j += 1;
         }
     }
+#if NV_VPI_VERSION_MAJOR == 1
     *arrData.sizePointer = j;
+#else
+    *arrData.buffer.aos.sizePointer = j;
+#endif
     vpiArrayUnlock(v);
 }
 
@@ -67,8 +86,13 @@ void VPIFeatureTracker::reduceVector1(vector<cv::Point2f> &v, vector<uchar> stat
     bool flag = false;
     if (correspondingVPIarr != NULL)
     {
+#if NV_VPI_VERSION_MAJOR == 1
         vpiArrayLock(correspondingVPIarr, VPI_LOCK_READ_WRITE, &arrData);
         arrPoints = (VPIKeypoint *)arrData.data;
+#else
+        vpiArrayLockData(correspondingVPIarr, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &arrData);
+        arrPoints = (VPIKeypoint *)arrData.buffer.aos.data;
+#endif
         flag = true;
     }
     for (int i = 0; i < int(v.size()); i++)
@@ -93,9 +117,16 @@ void VPIFeatureTracker::reduceVector1(vector<cv::Point2f> &v, vector<uchar> stat
 void outputVPIKeypoints(VPIArray src)
 {
     VPIArrayData srcdata;
+#if NV_VPI_VERSION_MAJOR == 1
     CHECK_STATUS(vpiArrayLock(src, VPI_LOCK_READ, &srcdata));
     const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.data;
     int totKeypoints = *srcdata.sizePointer;
+#else
+    vpiArrayLockData(src, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &srcData);
+    const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.buffer.aos.data;
+    int totKeypoints = *srcdata.buffer.aos.sizePointer;
+#endif
+
     std::cerr << "output keypoint in VPI array" << std::endl;
     for (int i = 0; i < totKeypoints; i++)
     {
@@ -109,9 +140,16 @@ void VPIFeatureTracker::reduceVectorVPI(vector<int> &v, VPIArray status)
 {
     int j = 0;
     VPIArrayData statusdata;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(status, VPI_LOCK_READ_WRITE, &statusdata);
     const uint8_t *status_data = (uint8_t *)statusdata.data;
     int tot = *statusdata.sizePointer;
+#else
+    vpiArrayLockData(status, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &statusdata);
+    const uint8_t *status_data = (uint8_t *)statusdata.buffer.aos.data;
+    int tot = *statusdata.buffer.aos.sizePointer;
+#endif
+
     for (int i = 0; i < tot; i++)
         if (1 - status_data[i])
             v[j++] = v[i];
@@ -123,9 +161,15 @@ void VPIFeatureTracker::reduceVectorVPI2(vector<cv::Point2f> &v, VPIArray status
 {
     int j = 0;
     VPIArrayData statusdata;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(status, VPI_LOCK_READ_WRITE, &statusdata);
     const uint8_t *status_data = (uint8_t *)statusdata.data;
     int tot = *statusdata.sizePointer;
+#else
+    vpiArrayLockData(status, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &statusdata);
+    const uint8_t *status_data = (uint8_t *)statusdata.buffer.aos.data;
+    int tot = *statusdata.bufffer.aos.sizePointer;
+#endif
     for (int i = 0; i < tot; i++)
         if (1 - status_data[i])
             v[j++] = v[i];
@@ -146,33 +190,38 @@ void VPIKeyPointArr_to_cvPointVec(VPIArray &src, vector<cv::Point2f> &dst)
 {
     // std::cerr<<"vpi keypoints arr to cv point vec"<<std::endl;
     VPIArrayData srcdata;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(src, VPI_LOCK_READ, &srcdata);
-    // std::cerr<<"finish lock"<<std::endl;
     const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.data;
-    // std::cerr<<"finish VPIKEYPOINT"<<std::endl;
     int totKeypoints = *srcdata.sizePointer;
-    // std::cerr<<"finish totkeypoints:"<<totKeypoints<<std::endl;
+#else
+    vpiArrayLockData(src, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &srcdata);
+    const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.buffer.aos.data;
+    int totKeypoints = *srcdata.buffer.aos.sizePointer;
+#endif
+
     dst.resize(totKeypoints);
     for (int i = 0; i < totKeypoints; i++)
     {
-        // std::cerr<<"i="<<i<<std::endl;
         cv::Point2f srcPoint{srcPoints[i].x, srcPoints[i].y};
-        // std::cerr<<srcPoint.x<<","<<srcPoint.y<<std::endl;
-        // std::cerr<<dst.size()<<std::endl;
         dst[i] = srcPoint;
-        // std::cerr<<"finish write"<<std::endl;
     }
-    // std::cerr<<"finish copying"<<std::endl;
-    // std::cerr<<"finish resize"<<std::endl;
     vpiArrayUnlock(src);
     // std::cerr<<"finish vpi keypoints arr to cv point vec"<<std::endl;
 }
 void VPIstatus_to_cvStatus(VPIArray &src, vector<uchar> &dst)
 {
     VPIArrayData srcdata;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(src, VPI_LOCK_READ, &srcdata);
     const uint8_t *srcStatus = (uint8_t *)srcdata.data;
     int size = *srcdata.sizePointer;
+#else
+    vpiArrayLockData(src, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &srcdata);
+    const uint8_t *srcStatus = (uint8_t *)srcdata.buffer.aos.data;
+    int size = *srcStatus.buffer.aos.sizePointer;
+#endif
+
     dst.resize(size);
     for (int i = 0; i < size; i++)
     {
@@ -195,15 +244,19 @@ vector<cv::Point2f> VPIFeatureTracker::pickPtsByQuatTree(VPIArray src, VPIArray 
     // std::cerr<<"creating array data"<<std::endl;
     VPIArrayData srcdata;
     VPIArrayData scoresdata;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(src, VPI_LOCK_READ, &srcdata);
     vpiArrayLock(scores, VPI_LOCK_READ, &scoresdata);
-    // std::cerr<<"finish lock"<<std::endl;
     const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.data;
-    // std::cerr<<"1"<<std::endl;
     const float *ptsScores = (float *)scoresdata.data;
-    // std::cerr<<"2"<<std::endl;
     int totKeypoints = *srcdata.sizePointer;
-    // std::cerr<<"init"<<std::endl;
+#else
+    vpiArrayLockData(src, VPI_LOCK_READ, VPI_ARRAY_BUFFER_HOST_AOS, &srcdata);
+    vpiArrayLockData(scores, VPI_LOCK_READ, VPI_ARRAY_BUFFER_HOST_AOS, &scoresdata);
+    const VPIKeypoint *srcPoints = (VPIKeypoint *)srcdata.buffer.aos.data;
+    const float *ptsScores = (float *)scoresdata.buffer.aos.data;
+    int totKeypoints = *srcdata.buffer.aos.sizePointer;
+#endif
     vector<cv::Point2f> tmp(totKeypoints);
     vector<float> tmpscores(totKeypoints);
     for (int i = 0; i < totKeypoints; i++)
@@ -409,21 +462,34 @@ VPIFeatureTracker::VPIFeatureTracker() : TrackerBase()
 void SortKeypoints(VPIArray keypoints, VPIArray scores, std::size_t max)
 {
     VPIArrayData ptsData, scoresData;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(keypoints, VPI_LOCK_READ_WRITE, &ptsData);
     vpiArrayLock(scores, VPI_LOCK_READ_WRITE, &scoresData);
     std::vector<int> indices(*ptsData.sizePointer);
+#else
+    vpiArrayLockDaya(keypoints, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &ptsData);
+    vpiArrayLockDaya(scores, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &scoresData);
+    std::vector<int> indices(*ptsData.buffer.aos.sizePointer);
+#endif
     std::iota(indices.begin(), indices.end(), 0);
     max = max < indices.size() ? max : indices.size();
     // only need to sort the first 'max' keypoints
     // report error when the actural size smaller than bound
     std::partial_sort(indices.begin(), indices.begin() + max, indices.end(), [&scoresData](int a, int b)
                       {
+#if NV_VPI_VERSION_MAJOR == 1
         uint32_t *score = reinterpret_cast<uint32_t *>(scoresData.data);
+#else
+        uint32_t *score = reinterpret_cast<uint32_t *>(scoresData.buffer.aos.data);
+#endif
         return score[a] >= score[b]; });
     // keep the only 'max' indexes.
     indices.resize(std::min<size_t>(indices.size(), max));
-
+#if NV_VPI_VERSION_MAJOR == 1
     VPIKeypoint *kptData = reinterpret_cast<VPIKeypoint *>(ptsData.data);
+#else
+    VPIKeypoint *kptData = reinterpret_cast<VPIKeypoint *>(ptsData.buffer.aos.data);
+#endif
     std::vector<VPIKeypoint> kpt;
     std::transform(indices.begin(), indices.end(), std::back_inserter(kpt),
                    [kptData](int idx)
@@ -431,7 +497,11 @@ void SortKeypoints(VPIArray keypoints, VPIArray scores, std::size_t max)
     std::copy(kpt.begin(), kpt.end(), kptData);
 
     // update keypoint array size.
+#if NV_VPI_VERSION_MAJOR == 1
     *ptsData.sizePointer = kpt.size();
+#else
+    *ptsData.buffer.aos.sizePointer = kpt.size();
+#endif
     vpiArrayUnlock(scores);
     vpiArrayUnlock(keypoints);
 }
@@ -448,9 +518,15 @@ void VPIFeatureTracker::setMask()
     vector<pair<int, pair<VPIKeypoint, int>>> cnt_pts_id;
     VPIArrayData forwArrData;
     VPIKeypoint *forwArrPoints;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(arrForwPts, VPI_LOCK_READ_WRITE, &forwArrData);
     forwArrPoints = (VPIKeypoint *)forwArrData.data;
     int totKeypoints = *forwArrData.sizePointer;
+#else
+    vpiArrayLockData(arrForwPts, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &forwArrData);
+    forwArrPoints = (VPIKeypoint *)forwArrData.buffer.aos.data;
+    int totKeypoints = *forwArrData.buffer.aos.sizePointer;
+#endif
     // std::cerr<<totKeypoints<<std::endl;
     for (unsigned int i = 0; i < totKeypoints; i++)
         cnt_pts_id.push_back(make_pair(track_cnt[i], make_pair(forwArrPoints[i], ids[i])));
@@ -464,8 +540,13 @@ void VPIFeatureTracker::setMask()
     vpiArrayCreate(MAX_HARRIS_CORNERS, VPI_ARRAY_TYPE_KEYPOINT, 0, &arrForwPts);
     ids.clear();
     track_cnt.clear();
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(arrForwPts, VPI_LOCK_READ_WRITE, &forwArrData);
     forwArrPoints = (VPIKeypoint *)forwArrData.data;
+#else
+    vpiArrayLockData(arrForwPts, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &forwArrData);
+    forwArrPoints = (VPIKeypoint *)forwArrData.buffer.aos.data;
+#endif
     int i = 0;
     // std::cerr<<cnt_pts_id.size()<<std::endl;
     for (auto &it : cnt_pts_id)
@@ -482,7 +563,11 @@ void VPIFeatureTracker::setMask()
             i = i + 1;
         }
     }
+#if NV_VPI_VERSION_MAJOR == 1
     *forwArrData.sizePointer = i;
+#else
+    *forwArrData.buffer.aos.sizePointer = i;
+#endif
     vpiArrayUnlock(arrForwPts);
     // vpiArraySetSize(arrForwPts,i);
     // std::cerr<<"output track_cnt:"<<track_cnt.size()<<std::endl;
@@ -493,15 +578,25 @@ void VPIFeatureTracker::setMask()
 void VPIFeatureTracker::addPoints()
 {
     VPIArrayData forwArrData;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(arrForwPts, VPI_LOCK_READ_WRITE, &forwArrData);
     VPIKeypoint *forwArrPoints = (VPIKeypoint *)forwArrData.data;
+#else
+    vpiArrayLockData(arrForwPts, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &forwArrData);
+    VPIKeypoint *forwArrPoints = (VPIKeypoint *)forwArrData.buffer.aos.data;
+#endif
     // std::cerr<<"n_pts size:"<<n_pts.size()<<std::endl;
     for (auto &p : n_pts)
     {
         // forw_pts.push_back(p);
         // add arrforwpts
+#if NV_VPI_VERSION_MAJOR == 1
         int32_t end_idx = *forwArrData.sizePointer;
         *forwArrData.sizePointer = *forwArrData.sizePointer + 1;
+#else
+        int32_t end_idx = *forwArrData.buffer.aos.sizePointer;
+        *forwArrData.buffer.aos.sizePointer = *forwArrData.buffer.aos.sizePointer + 1;
+#endif
         VPIKeypoint new_p;
         new_p.x = p.x;
         new_p.y = p.y;
@@ -518,7 +613,7 @@ void VPIFeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
     // std::cerr<<"round:"<<round<<std::endl;
     // round = round + 1;
     // if (round<450) return;
-    LOG(INFO)<<"VPI read image";
+    LOG(INFO) << "VPI read image";
     cv::Mat img;
     TicToc t_r;
     cur_time = _cur_time;
@@ -571,13 +666,21 @@ void VPIFeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
         vpiStreamSync(stream);
 
         VPIArrayData forw_pts_data, status_data;
+#if NV_VPI_VERSION_MAJOR == 1
         vpiArrayLock(arrForwPts, VPI_LOCK_READ_WRITE, &forw_pts_data);
         vpiArrayLock(arrStatus, VPI_LOCK_READ_WRITE, &status_data);
         VPIKeypoint *forw_points = (VPIKeypoint *)forw_pts_data.data;
         uint8_t *status_data_ = (uint8_t *)status_data.data;
         int totKeypoints = *forw_pts_data.sizePointer;
         int status_size = *status_data.sizePointer;
-
+#else
+        vpiArrayLockData(arrForwPts, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &forw_pts_data);
+        vpiArrayLockData(arrStatus, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &status_data);
+        VPIKeypoint *forw_points = (VPIKeypoint *)forw_pts_data.buffer.aos.data;
+        uint8_t *status_data_ = (uint8_t *)status_data.buffer.aos.data;
+        int totKeypoints = *forw_pts_data.buffer.aos.sizePointer;
+        int status_size = *status_data.buffer.aos.sizePointer;
+#endif
         // std::cerr<<"tracked count:"<<totKeypoints<<","<<status_size<<std::endl;
         for (int i = 0; i < totKeypoints; i++)
         {
@@ -705,6 +808,7 @@ void VPIFeatureTracker::rejectWithF()
         // ROS_DEBUG("FM ransac begins");
         TicToc t_f;
         VPIArrayData cur_data, forw_data;
+#if NV_VPI_VERSION_MAJOR == 1
         vpiArrayLock(arrCurPts, VPI_LOCK_READ, &cur_data);
         vpiArrayLock(arrForwPts, VPI_LOCK_READ, &forw_data);
         VPIKeypoint *cur_data_pts;
@@ -713,6 +817,16 @@ void VPIFeatureTracker::rejectWithF()
         forw_data_pts = (VPIKeypoint *)forw_data.data;
         int cur_pts_num = *cur_data.sizePointer;
         int forw_pts_num = *forw_data.sizePointer;
+#else
+        vpiArrayLockData(arrCurPts, VPI_LOCK_READ, VPI_ARRAY_BUFFER_HOST_AOS, &cur_data);
+        vpiArrayLockData(arrForwPts, VPI_LOCK_READ, VPI_ARRAY_BUFFER_HOST_AOS, &forw_data);
+        VPIKeypoint *cur_data_pts;
+        VPIKeypoint *forw_data_pts;
+        cur_data_pts = (VPIKeypoint *)cur_data.buffer.aos.data;
+        forw_data_pts = (VPIKeypoint *)forw_data.buffer.aos.data;
+        int cur_pts_num = *cur_data.buffer.aos.sizePointer;
+        int forw_pts_num = *forw_data.buffer.aos.sizePointer;
+#endif
         vector<uchar> status;
         // #if USE_GPU
         //     float un_cur_pts[cur_pts_num*2];
@@ -855,9 +969,15 @@ void VPIFeatureTracker::undistortedPoints()
     cur_un_pts_map.clear();
     VPIArrayData cur_data;
     VPIKeypoint *cur_data_pts;
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(arrCurPts, VPI_LOCK_READ_WRITE, &cur_data);
     cur_data_pts = (VPIKeypoint *)cur_data.data;
     int totKeypoints = *cur_data.sizePointer;
+#else
+    vpiArrayLock(arrCurPts, VPI_LOCK_READ_WRITE, VPI_ARRAY_BUFFER_HOST_AOS, &cur_data);
+    cur_data_pts = (VPIKeypoint *)cur_data.buffer.aos.data;
+    int totKeypoints = *cur_data.buffer.aos.sizePointer;
+#endif
     // cv::undistortPoints(cur_pts, un_pts, K, cv::Mat());
     for (unsigned int i = 0; i < totKeypoints; i++)
     {
@@ -996,8 +1116,13 @@ void VPIFeatureTracker::getCurPt(int idx, cv::Point2f &cur_pt)
 
 void VPIFeatureTracker::Lock()
 {
+#if NV_VPI_VERSION_MAJOR == 1
     vpiArrayLock(arrCurPts, VPI_LOCK_READ, &cur_data);
     cur_data_pts = (VPIKeypoint *)cur_data.data;
+#else
+    vpiArrayLockData(arrCurPts, VPI_LOCK_READ, VPI_ARRAY_BUFFER_HOST_AOS, &cur_data);
+    cur_data_pts = (VPIKeypoint *)cur_data.buffer.aos.data;
+#endif
 }
 
 void VPIFeatureTracker::Unlock()

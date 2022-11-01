@@ -29,7 +29,7 @@ cam_0:
   sensor_type: 0
   left_image_topic: "/ros_frame/camera_0"
   frame_id: "cam_0"
-  camera_config_file: "/home/yao/vins_depth_ws2/src/MSVIO/config/MSVIO/cam360/cam_0.yaml"
+  camera_config_file: "/home/yao/MCVIO/src/MCVIO/config/MCVIO/cam360/cam_0.yaml"
   extrinsicRotation_imu_camera: !!opencv-matrix
     rows: 3
     cols: 3
@@ -51,7 +51,7 @@ cam_0:
   show_track: 1           # publish tracking image as topic
   equalize: 1             # if image is too dark or light, trun on equalize to find enough features
   fisheye: 1             # if using fisheye, trun on it. A circle mask will be loaded to remove edge noisy points
-  fisheye_path: "/home/yao/vins_depth_ws2/src/MSVIO/config/MSVIO/fisheye_mask.jpg"
+  fisheye_path: "/home/yao/MCVIO/src/MCVIO/config/MCVIO/fisheye_mask.jpg"
   image_width: 816
   image_height: 686
   visualize: 1
@@ -73,7 +73,7 @@ cam_1:
   sensor_type: 0
   left_image_topic: "/ros_frame/camera_1"
   frame_id: "cam_1"
-  camera_config_file: "/home/yao/vins_depth_ws2/src/MSVIO/config/MSVIO/cam360/cam_1.yaml"
+  camera_config_file: "/home/yao/MCVIO/src/MCVIO/config/MCVIO/cam360/cam_1.yaml"
   extrinsicRotation_imu_camera: !!opencv-matrix
     rows: 3
     cols: 3
@@ -95,7 +95,7 @@ cam_1:
   show_track: 1           # publish tracking image as topic
   equalize: 1             # if image is too dark or light, trun on equalize to find enough features
   fisheye: 1             # if using fisheye, trun on it. A circle mask will be loaded to remove edge noisy points
-  fisheye_path: "/home/yao/vins_depth_ws2/src/MSVIO/config/MSVIO/fisheye_mask.jpg"
+  fisheye_path: "/home/yao/MCVIO/src/MCVIO/config/MCVIO/fisheye_mask.jpg"
   image_width: 816
   image_height: 686
   visualize: 1
