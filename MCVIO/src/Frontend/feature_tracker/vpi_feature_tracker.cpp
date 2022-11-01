@@ -1114,7 +1114,7 @@ void VPIFeatureTracker::initVPIData(const sensor_msgs::ImageConstPtr &img_msg)
 #if NV_VPI_VERSION_MAJOR == 1
     vpiSubmitGaussianPyramidGenerator(stream, backend, VPI_cur_img, pyrCurFrame);
 #else
-    vpiSubmitGaussianPyramidGenerator(stream, backend, VPI_cur_img, pyrCurFrame, VPI_BORDER_ZERO)
+    vpiSubmitGaussianPyramidGenerator(stream, backend, VPI_cur_img, pyrCurFrame, VPI_BORDER_ZERO);
 #endif
 }
 
