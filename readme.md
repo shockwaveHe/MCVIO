@@ -83,7 +83,7 @@ If you use MCVIO for your academic research, please cite our paper.
 ```
 @inproceedings{Yao2022IROS,
   title={Toward Robust Visual-Inertial Odometry with Multiple Nonoverlapping Monocular Cameras},
-  author={Yao, He and Huai, Yu and Wen, Yang and Sebastian, Scherer},
+  author={He, Yao and Yu, Huai and Yang, Wen and Scherer, Sebastian},
   booktitle={2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
   year={2022},
   organization={IEEE}
