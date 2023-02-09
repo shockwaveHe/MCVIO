@@ -1,0 +1,15 @@
+<launch>
+    <arg name="vins_path" default="$(find mcvio)/config/" />
+    <arg name="config_path" default="$(find mcvio)/config/MCVIO/EuRoC/MCVIO_EuRoC.yaml"/>
+
+    <node name="MCVIO_estimator" pkg="mcvio" type="mcvio_estimator" output="screen" >
+        <param name="config_file" type="string" value="$(arg config_path)" />
+        <param name="vins_folder" type="string" value="$arg vins_path" />
+        <param name="lio_world_frame" type="string" value="sensor_init"/>
+        <param name="vins_world_frame" type="string" value="vins_world"/>
+        <param name="lio_laser_frame" type="string" value="sensor"/>
+        <param name="laser_frame" type="string" value="sensor"/>
+        <param name="vins_imu_frame" type="string" value="vins_imu"/>
+        <param name="camera_frame" type="string" value="vins_camera"/>
+    </node>
+</launch>
